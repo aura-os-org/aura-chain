@@ -11,6 +11,8 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, MultiSignature, Perbill,
 };
+use sp_weights::{Weight, WeightToFee as WeightToFeeT};
+use smallvec::smallvec;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -24,15 +26,14 @@ use frame_support::{
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot,
 };
 use pallet_transaction_payment::{CurrencyAdapter, FeeDetails, RuntimeDispatchInfo};
-use sp_runtime::traits::AccountIdConversion;
 
+// Import our Aura Identity pallet
 use pallet_aura_identity;
 
 /// An index to a block.
@@ -122,6 +123,9 @@ parameter_types! {
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
     pub const SS58Prefix: u16 = 42;
+    
+    // Добавляем конфигурацию для Aura
+    pub const MaxAuthorities: u32 = 32;
 }
 
 /// Implement the system config for the runtime.
@@ -172,6 +176,25 @@ impl frame_system::Config for Runtime {
     type MaxConsumers = ConstU32<16>;
 }
 
+// Aura config
+impl sp_consensus_aura::Config for Runtime {
+    type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
+    type DisabledValidators = ();
+    type MaxAuthorities = MaxAuthorities;
+}
+
+// Grandpa config (пока базово)
+impl pallet_grandpa::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    type MaxAuthorities = MaxAuthorities;
+    type MaxSetIdSessionEntries = ConstU64<0>;
+    
+    type KeyOwnerProof = sp_core::Void;
+    type EquivocationProof = sp_consensus_grandpa::EquivocationProof<Hash, BlockNumber>;
+    type EquivocationReportingSystem = ();
+}
+
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * MILLIUNIT;
     pub const MaxLocks: u32 = 50;
@@ -216,13 +239,12 @@ impl<T> WeightToFeePolynomial for IdentityFee<T> {
     type Balance = Balance;
 
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        let coefficient = WeightToFeeCoefficient {
+        smallvec![WeightToFeeCoefficient {
             degree: 1,
             coeff_integer: 1,
             coeff_frac: Perbill::zero(),
             negative: false,
-        };
-        sp_std::vec![coefficient]
+        }]
     }
 }
 
@@ -249,6 +271,8 @@ impl pallet_sudo::Config for Runtime {
 construct_runtime!(
     pub struct Runtime {
         System: frame_system,
+        Aura: sp_consensus_aura,
+        Grandpa: pallet_grandpa,
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
         AuraIdentity: pallet_aura_identity,
@@ -303,3 +327,13 @@ impl_runtime_apis! {
 // Weight units
 pub type BlockExecutionWeight = frame_support::weights::constants::BlockExecutionWeight;
 pub type ExtrinsicBaseWeight = frame_support::weights::constants::ExtrinsicBaseWeight;
+
+#[cfg(feature = "std")]
+include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+#[cfg(feature = "std")]
+/// The wasm binary that is included in the runtime.
+pub const WASM_BINARY: Option<&[u8]> = Some(include_bytes!(concat!(
+    env!("OUT_DIR"),
+    "/wasm_binary.blob"
+)).as_slice());
