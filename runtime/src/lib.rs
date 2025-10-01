@@ -21,7 +21,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU64, ConstU8, Everything},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
     weights::{
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
@@ -277,10 +277,10 @@ impl pallet_aura_identity::Config for Runtime {
     type Currency = Balances;
     
     /// Максимальное количество доверенных контактов
-    type MaxTrustees = MaxTrustees;
+    type MaxTrustees = ConstU32<10>;
     
     /// Депозит для настройки recovery
-    type RecoveryDeposit = RecoveryDeposit;
+    type RecoveryDeposit = ConstU128<{ 1 * UNIT }>;
 }
 
 impl pallet_sudo::Config for Runtime {
