@@ -104,19 +104,14 @@ mod tests {
 	use frame_support::{assert_noop, assert_ok};
 	use sp_core::H256;
 	use sp_runtime::{
-		testing::Header,
 		traits::{BlakeTwo256, IdentityLookup},
+		BuildStorage,
 	};
 
-	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
 
 	frame_support::construct_runtime!(
-		pub enum Test where
-			Block = Block,
-			NodeBlock = Block,
-			UncheckedExtrinsic = UncheckedExtrinsic,
-		{
+		pub enum Test {
 			System: frame_system,
 			AuraIdentity: pallet,
 		}
@@ -136,7 +131,7 @@ mod tests {
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Block = Block;
 		type RuntimeEvent = RuntimeEvent;
-		type BlockHashCount = frame_system::limits::BlockHashCount;
+		type BlockHashCount = frame_system::Config::BlockHashCount;
 		type Version = ();
 		type PalletInfo = PalletInfo;
 		type AccountData = ();
@@ -211,7 +206,7 @@ mod tests {
 
 	// Вспомогательная функция для тестов
 	fn new_test_ext() -> sp_io::TestExternalities {
-		let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 		t.into()
 	}
 }
