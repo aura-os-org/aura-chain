@@ -126,6 +126,17 @@ parameter_types! {
     
     // Добавляем конфигурацию для Aura
     pub const MaxAuthorities: u32 = 32;
+    
+    // ========== НОВЫЕ КОНСТАНТЫ ДЛЯ SOCIAL RECOVERY ==========
+    
+    /// Максимальное количество доверенных контактов
+    pub const MaxTrustees: u32 = 10;
+    
+    /// Депозит для настройки Social Recovery (1 AURA)
+    pub const RecoveryDeposit: Balance = 1 * UNIT;
+    
+    /// Период задержки для восстановления (24 часа при 6-секундных блоках)
+    pub const DefaultRecoveryDelay: BlockNumber = 14400;
 }
 
 /// Implement the system config for the runtime.
@@ -257,9 +268,19 @@ impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
 }
 
+// ========== ОБНОВЛЕННАЯ КОНФИГУРАЦИЯ AURA IDENTITY ==========
+
 impl pallet_aura_identity::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AuraIdLimit = ConstU32<1024>;
+    
+    /// Валюта для депозитов
+    type Currency = Balances;
+    
+    /// Максимальное количество доверенных контактов
+    type MaxTrustees = MaxTrustees;
+    
+    /// Депозит для настройки recovery
+    type RecoveryDeposit = RecoveryDeposit;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -322,11 +343,68 @@ impl_runtime_apis! {
             System::account_nonce(account)
         }
     }
+    
+    // Aura API
+    impl sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId> for Runtime {
+        fn slot_duration() -> sp_consensus_aura::SlotDuration {
+            sp_consensus_aura::SlotDuration::from_millis(1000)
+        }
+
+        fn authorities() -> Vec<sp_consensus_aura::sr25519::AuthorityId> {
+            Aura::authorities().into_inner()
+        }
+    }
+    
+    // Grandpa API
+    impl sp_consensus_grandpa::GrandpaApi<Block> for Runtime {
+        fn grandpa_authorities() -> sp_consensus_grandpa::AuthorityList {
+            Grandpa::grandpa_authorities()
+        }
+
+        fn current_set_id() -> sp_consensus_grandpa::SetId {
+            Grandpa::current_set_id()
+        }
+
+        fn submit_report_equivocation_unsigned_extrinsic(
+            _equivocation_proof: sp_consensus_grandpa::EquivocationProof<
+                <Block as BlockT>::Hash,
+                NumberFor<Block>,
+            >,
+            _key_owner_proof: sp_consensus_grandpa::OpaqueKeyOwnershipProof,
+        ) -> Option<()> {
+            None
+        }
+
+        fn generate_key_ownership_proof(
+            _set_id: sp_consensus_grandpa::SetId,
+            _authority_id: sp_consensus_grandpa::AuthorityId,
+        ) -> Option<sp_consensus_grandpa::OpaqueKeyOwnershipProof> {
+            None
+        }
+    }
+    
+    // Session API
+    impl sp_session::SessionKeys<Block> for Runtime {
+        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
+            SessionKeys::generate(seed)
+        }
+
+        fn decode_session_keys(
+            encoded: Vec<u8>,
+        ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
+            SessionKeys::decode_into_raw_public_keys(&encoded)
+        }
+    }
 }
 
 // Weight units
 pub type BlockExecutionWeight = frame_support::weights::constants::BlockExecutionWeight;
 pub type ExtrinsicBaseWeight = frame_support::weights::constants::ExtrinsicBaseWeight;
+
+// Dispatch ratios
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(2u64 * 1024 * 1024 * 1024, u64::MAX);
 
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
