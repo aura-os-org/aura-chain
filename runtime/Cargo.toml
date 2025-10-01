@@ -5,17 +5,59 @@ edition = "2021"
 description = "Aura Chain Runtime"
 authors = ["Aura OS Team"]
 
-[lib]
-name = "aura_chain_runtime"
-path = "src/lib.rs"
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+
+# Substrate
+frame-benchmarking = { version = "4.0.0", default-features = false, optional = true }
+frame-support = { version = "4.0.0", default-features = false }
+frame-system = { version = "4.0.0", default-features = false }
+frame-system-rpc-runtime-api = { version = "4.0.0", default-features = false }
 pallet-aura-identity = { path = "../pallets/aura-identity", default-features = false }
-sp-runtime = { workspace = true, default-features = false }
+pallet-balances = { version = "4.0.0", default-features = false }
+pallet-transaction-payment = { version = "4.0.0", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0", default-features = false }
+pallet-sudo = { version = "4.0.0", default-features = false }
+sp-api = { version = "4.0.0", default-features = false }
+sp-core = { version = "4.0.0", default-features = false }
+sp-io = { version = "4.0.0", default-features = false }
+sp-runtime = { version = "4.0.0", default-features = false }
+sp-std = { version = "4.0.0", default-features = false }
+sp-version = { version = "4.0.0", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+    "codec/std",
+    "scale-info/std",
+    "frame-benchmarking/std",
+    "frame-support/std",
+    "frame-system/std",
+    "frame-system-rpc-runtime-api/std",
     "pallet-aura-identity/std",
+    "pallet-balances/std",
+    "pallet-transaction-payment/std",
+    "pallet-transaction-payment-rpc-runtime-api/std",
+    "pallet-sudo/std",
+    "sp-api/std",
+    "sp-core/std",
+    "sp-io/std",
     "sp-runtime/std",
+    "sp-std/std",
+    "sp-version/std",
+]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "pallet-balances/runtime-benchmarks",
+    "pallet-aura-identity/runtime-benchmarks",
+]
+try-runtime = [
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "pallet-balances/try-runtime",
 ]
