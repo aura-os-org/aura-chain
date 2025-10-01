@@ -5,4 +5,8 @@ edition = "2021"
 description = "Aura Chain Runtime"
 authors = ["Aura OS Team"]
 
+[lib]
+name = "aura_chain_runtime"
+path = "src/lib.rs"
+
 [dependencies]
