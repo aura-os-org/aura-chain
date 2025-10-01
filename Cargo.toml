@@ -4,6 +4,7 @@ members = [
     "pallets/aura-identity", 
     "runtime",
 ]
+resolver = "2"
 
 [workspace.dependencies]
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
@@ -13,3 +14,11 @@ sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkado
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 scale-info = { version = "2.6", default-features = false }
+
+# Явно фиксируем версии для криптографических библиотек
+schnorrkel = { version = "0.11.5", features = ["getrandom"] }
+substrate-bip39 = { version = "2.0.0", default-features = false }
+
+# Принудительно патчим конфликтующие зависимости
+[patch.crates-io]
+schnorrkel = { git = "https://github.com/w3f/schnorrkel.git", branch = "master" }
