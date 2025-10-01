@@ -1,0 +1,8 @@
+[package]
+name = "aura-chain-node"
+version = "0.1.0"
+edition = "2021"
+description = "Aura Chain Node"
+authors = ["Aura OS Team"]
+
+[dependencies]
