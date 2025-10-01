@@ -15,10 +15,11 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
 scale-info = { version = "2.6", default-features = false }
 
-# Явно фиксируем версии для криптографических библиотек
-schnorrkel = { version = "0.11.5", features = ["getrandom"] }
-substrate-bip39 = { version = "2.0.0", default-features = false }
-
-# Принудительно патчим конфликтующие зависимости
+# АГРЕССИВНЫЙ PATCH - принудительно используем одну версию
 [patch.crates-io]
-schnorrkel = { git = "https://github.com/w3f/schnorrkel.git", branch = "master" }
+schnorrkel = { git = "https://github.com/w3f/schnorrkel.git", rev = "5f6c28db6f058fe195d2c6f7c6c6e3e4e25bf80b" }
+substrate-bip39 = { git = "https://github.com/paritytech/substrate-bip39.git", branch = "master" }
+
+# Принудительно заменяем все вхождения schnorrkel
+[patch."https://github.com/paritytech/substrate.git"]
+schnorrkel = { git = "https://github.com/w3f/schnorrkel.git", rev = "5f6c28db6f058fe195d2c6f7c6c6e3e4e25bf80b" }
