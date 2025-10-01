@@ -107,3 +107,119 @@ pub mod pallet {
         pub created: T::BlockNumber,
     }
 }
+
+// ТЕСТЫ
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frame_support::{assert_ok, assert_noop};
+    use sp_core::H256;
+    use sp_runtime::{traits::{BlakeTwo256, IdentityLookup}, testing::Header};
+
+    type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+    type Block = frame_system::mocking::MockBlock<Test>;
+
+    frame_support::construct_runtime!(
+        pub enum Test where
+            Block = Block,
+            NodeBlock = Block,
+            UncheckedExtrinsic = UncheckedExtrinsic,
+        {
+            System: frame_system,
+            AuraIdentity: pallet,
+        }
+    );
+
+    impl frame_system::Config for Test {
+        type BaseCallFilter = frame_support::traits::Everything;
+        type BlockWeights = ();
+        type BlockLength = ();
+        type DbWeight = ();
+        type RuntimeOrigin = RuntimeOrigin;
+        type RuntimeCall = RuntimeCall;
+        type Nonce = u64;
+        type Hash = H256;
+        type Hashing = BlakeTwo256;
+        type AccountId = u64;
+        type Lookup = IdentityLookup<Self::AccountId>;
+        type Block = Block;
+        type RuntimeEvent = RuntimeEvent;
+        type BlockHashCount = frame_system::limits::BlockHashCount;
+        type Version = ();
+        type PalletInfo = PalletInfo;
+        type AccountData = ();
+        type OnNewAccount = ();
+        type OnKilledAccount = ();
+        type SystemWeightInfo = ();
+        type SS58Prefix = ();
+        type OnSetCode = ();
+        type MaxConsumers = frame_support::traits::ConstU32<16>;
+    }
+
+    impl Config for Test {
+        type RuntimeEvent = RuntimeEvent;
+    }
+
+    #[test]
+    fn test_did_generation() {
+        let public_key = [1u8; 32];
+        let did = pallet::Pallet::<Test>::generate_did(&public_key);
+        
+        // DID должен быть хэшом публичного ключа
+        assert_eq!(did.len(), 32);
+        assert_ne!(did, public_key); // Должен отличаться от исходного ключа
+    }
+
+    #[test]
+    fn test_create_aura_id() {
+        new_test_ext().execute_with(|| {
+            let account_id = 1;
+            let public_key = [2u8; 32];
+            let recovery_config = vec![1, 2, 3];
+
+            // Создание Aura ID должно работать
+            assert_ok!(AuraIdentity::create_aura_id(
+                RuntimeOrigin::signed(account_id),
+                public_key,
+                recovery_config.clone()
+            ));
+
+            // Проверяем что запись создалась
+            let record = AuraIdentity::get_aura_id(account_id).unwrap();
+            assert_eq!(record.public_key, public_key);
+            assert_eq!(record.recovery_config, recovery_config);
+        });
+    }
+
+    #[test]
+    fn test_duplicate_aura_id() {
+        new_test_ext().execute_with(|| {
+            let account_id = 1;
+            let public_key = [3u8; 32];
+            let recovery_config = vec![1, 2, 3];
+
+            // Первое создание - ок
+            assert_ok!(AuraIdentity::create_aura_id(
+                RuntimeOrigin::signed(account_id),
+                public_key,
+                recovery_config.clone()
+            ));
+
+            // Второе создание для того же аккаунта - ошибка
+            assert_noop!(
+                AuraIdentity::create_aura_id(
+                    RuntimeOrigin::signed(account_id),
+                    public_key,
+                    recovery_config
+                ),
+                Error::<Test>::AuraIdAlreadyExists
+            );
+        });
+    }
+
+    // Вспомогательная функция для тестов
+    fn new_test_ext() -> sp_io::TestExternalities {
+        let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+        t.into()
+    }
+}
