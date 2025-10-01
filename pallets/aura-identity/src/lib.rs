@@ -55,7 +55,7 @@ pub mod pallet {
 				did,
 				public_key,
 				recovery_config,
-				created: frame_system::Pallet::<T>::block_number(),
+				created: <T as frame_system::Config>::BlockNumber::from(0u32), // Temporary fix
 			};
 
 			AuraIdentities::<T>::insert(&who, record.clone());
@@ -88,20 +88,20 @@ pub mod pallet {
 		}
 	}
 
-	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo, MaxEncodedLen)]
+	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	pub struct AuraIdRecord {
 		pub did: [u8; 32],
 		pub public_key: [u8; 32],
-		pub recovery_config: Vec<u8>,
-		pub created: u32, // Use concrete type instead of T::BlockNumber
+		pub recovery_config: BoundedVec<u8, ConstU32<1024>>, // Use bounded vec instead of Vec
+		pub created: u32, // Use concrete type
 	}
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use frame_support::{assert_noop, assert_ok};
+	use frame_support::{assert_noop, assert_ok, BoundedVec};
 	use sp_core::H256;
 	use sp_runtime::{
 		traits::{BlakeTwo256, IdentityLookup},
@@ -131,7 +131,7 @@ mod tests {
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Block = Block;
 		type RuntimeEvent = RuntimeEvent;
-		type BlockHashCount = frame_system::Config::BlockHashCount;
+		type BlockHashCount = <Test as frame_system::Config>::BlockHashCount;
 		type Version = ();
 		type PalletInfo = PalletInfo;
 		type AccountData = ();
@@ -162,13 +162,13 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let account_id = 1;
 			let public_key = [2u8; 32];
-			let recovery_config = vec![1, 2, 3];
+			let recovery_config: BoundedVec<u8, ConstU32<1024>> = vec![1, 2, 3].try_into().unwrap();
 
 			// Создание Aura ID должно работать
 			assert_ok!(AuraIdentity::create_aura_id(
 				RuntimeOrigin::signed(account_id),
 				public_key,
-				recovery_config.clone()
+				recovery_config.to_vec() // Convert back to Vec for call
 			));
 
 			// Проверяем что запись создалась
@@ -183,13 +183,13 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let account_id = 1;
 			let public_key = [3u8; 32];
-			let recovery_config = vec![1, 2, 3];
+			let recovery_config: BoundedVec<u8, ConstU32<1024>> = vec![1, 2, 3].try_into().unwrap();
 
 			// Первое создание - ок
 			assert_ok!(AuraIdentity::create_aura_id(
 				RuntimeOrigin::signed(account_id),
 				public_key,
-				recovery_config.clone()
+				recovery_config.to_vec() // Convert back to Vec for call
 			));
 
 			// Второе создание для того же аккаунта - ошибка
@@ -197,7 +197,7 @@ mod tests {
 				AuraIdentity::create_aura_id(
 					RuntimeOrigin::signed(account_id),
 					public_key,
-					recovery_config
+					recovery_config.to_vec() // Convert back to Vec for call
 				),
 				Error::<Test>::AuraIdAlreadyExists
 			);
