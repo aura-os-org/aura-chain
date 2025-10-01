@@ -1,0 +1,8 @@
+[package]
+name = "aura-chain-runtime"
+version = "0.1.0"
+edition = "2021"
+description = "Aura Chain Runtime"
+authors = ["Aura OS Team"]
+
+[dependencies]
