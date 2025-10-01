@@ -71,7 +71,7 @@ pub mod pallet {
 		pub fn setup_recovery(
 			origin: OriginFor<T>,
 			shares: u8,
-			trustees: Vec<T::AccountId>,
+			_trustees: Vec<T::AccountId>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -83,18 +83,18 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn generate_did(public_key: &[u8; 32]) -> [u8; 32] {
+		pub fn generate_did(public_key: &[u8; 32]) -> [u8; 32] {
 			sp_io::hashing::blake2_256(public_key)
 		}
 	}
 
-	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct AuraIdRecord {
 		pub did: [u8; 32],
 		pub public_key: [u8; 32],
 		pub recovery_config: Vec<u8>,
-		pub created: T::BlockNumber,
+		pub created: u32, // Use concrete type instead of T::BlockNumber
 	}
 }
 
@@ -150,7 +150,7 @@ mod tests {
 	#[test]
 	fn test_did_generation() {
 		let public_key = [1u8; 32];
-		let did = pallet::Pallet::<Test>::generate_did(&public_key);
+		let did = Pallet::<Test>::generate_did(&public_key);
 
 		// DID должен быть хэшом публичного ключа
 		assert_eq!(did.len(), 32);
