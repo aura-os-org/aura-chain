@@ -18,7 +18,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_aura_id)]
-	pub type AuraIdentities<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AuraIdRecord>;
+	pub type AuraIdentities<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AuraIdRecord<T>>;
 
 	#[pallet::storage]
 	pub type DidIndex<T: Config> = StorageMap<_, Blake2_128Concat, [u8; 32], T::AccountId>;
@@ -55,7 +55,7 @@ pub mod pallet {
 				.try_into()
 				.map_err(|_| "Recovery config too large")?;
 
-			let record = AuraIdRecord {
+			let record = AuraIdRecord::<T> {
 				did,
 				public_key,
 				recovery_config: bounded_recovery_config,
@@ -94,7 +94,7 @@ pub mod pallet {
 
 	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
-	pub struct AuraIdRecord {
+	pub struct AuraIdRecord<T: Config> {
 		pub did: [u8; 32],
 		pub public_key: [u8; 32],
 		pub recovery_config: BoundedVec<u8, ConstU32<1024>>,
