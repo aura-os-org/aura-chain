@@ -9,6 +9,9 @@ edition = "2021"
 name = "aura-chain-node"
 path = "src/main.rs"
 
+[patch.crates-io]
+schnorrkel = { git = "https://github.com/w3f/schnorrkel.git", branch = "master" }
+
 [dependencies]
 aura-chain-runtime = { path = "../runtime", default-features = false }
 
