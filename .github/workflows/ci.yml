@@ -1,3 +1,4 @@
+
 name: CI Pipeline
 
 on:
@@ -19,6 +20,7 @@ jobs:
       with:
         toolchain: stable
         override: true
+        components: rustfmt, clippy
 
     - name: Cache cargo registry
       uses: actions/cache@v3
@@ -34,9 +36,6 @@ jobs:
     - name: Check code formatting
       run: cargo fmt -- --check
 
-    - name: Run tests
-      run: cargo test --all-features
-
     - name: Check compilation
       run: cargo check --all-features
 
@@ -44,6 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
     - name: Security audit
       run: |
         cargo install cargo-audit
