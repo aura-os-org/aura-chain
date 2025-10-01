@@ -10,12 +10,12 @@ name = "aura_chain_runtime"
 path = "src/lib.rs"
 
 [dependencies]
-aura-identity = { path = "../pallets/aura-identity", default-features = false }
+pallet-aura-identity = { path = "../pallets/aura-identity", default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 
 [features]
 default = ["std"]
 std = [
-    "aura-identity/std",
+    "pallet-aura-identity/std",
     "sp-runtime/std",
 ]
